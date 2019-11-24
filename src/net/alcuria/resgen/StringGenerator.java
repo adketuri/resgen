@@ -34,11 +34,18 @@ public class StringGenerator {
 		List<String> lines = new ArrayList<String>();
 		lines.add("package net.alcuria.gen;\n");
 		lines.add("import java.io.BufferedReader;");
+		lines.add("import java.io.IOException;");
 		lines.add("import net.alcuria.onlinerpg.client.ui.i18n.LocalizationManager;");
 		lines.add("import com.badlogic.gdx.utils.ObjectMap;\n");
-		lines.add("/** This class is auto-generated. You shouldn't need to modify it.*/");
+
+		lines.add("/**");
+		lines.add(" * This class is auto-generated. You shouldn't need to modify it.");
+		lines.add(" * @see <a href=\"https://github.com/adketuri/resgen\">resgen</a> for more information");
+		lines.add(" * @author Andrew Keturi");
+		lines.add(" */");
+
 		lines.add("public class S {");
-		lines.add("  public static final ObjectMap<String, String> map = new ObjectMap<String, String>();");
+		lines.add("\tpublic static final ObjectMap<String, String> map = new ObjectMap<>();");
 		final String csvPath = inputPath + "\\" + lang + ".csv";
 		final File file = new File(csvPath);
 		if (!file.exists()) {
@@ -63,7 +70,7 @@ public class StringGenerator {
 						throw new RuntimeException("key found is reserved: " + split[0]);
 					}
 				}
-				lines.add("  public static String " + split[0] + ";");
+				lines.add("\tpublic static String " + split[0] + ";");
 				// add the strings in the key to the character map
 				if (split.length > 1) {
 					for (int i = 0; i < split[1].length(); i++) {
@@ -87,32 +94,44 @@ public class StringGenerator {
 			Files.write(out, chars, Charset.forName("UTF-8"));
 			System.out.println("Done! Created chars file in: " + charsPath);
 
-			lines.add("  static {");
-			lines.add("     S.init();");
-			lines.add("  }");
+			lines.add("\tstatic {");
+			lines.add("\t\tS.init();");
+			lines.add("\t}\n");
 
-			// add initialized map
-			lines.add("  public static void init() {");
-			lines.add("    try {");
-			lines.add("      BufferedReader reader = LocalizationManager.getReader();");
-			lines.add("      String line;");
-			for (String s : used) {
-				lines.add("      line = reader.readLine();");
-				lines.add("      " + s + " = line.split(\",\", 2).length > 1 ? line.split(\",\", 2)[1].replace(\"\\\"\", \"\") : \"!" + s + "\";");
-				lines.add("      map.put(line.split(\",\")[0], " + s + ");");
+			lines.add("\tpublic static void init() {");
+			lines.add("\t\tBufferedReader reader = LocalizationManager.getReader();");
+			int readsPerMethod = 500;
+			for (int i = 0; i < used.size() / readsPerMethod; i++){
+				lines.add("\t\tgenerate" + (i + 1) + "(reader);");
 			}
-			lines.add("    } catch (Exception e){");
-			lines.add("      throw new RuntimeException(e);");
-			lines.add("    }");
-			lines.add("  }");
+			lines.add("\t}\n");
 
-			lines.add("  public static String get (String k){");
-			lines.add("    if (map.containsKey(k)){");
-			lines.add("      return map.get(k);");
-			lines.add("    } else {");
-			lines.add("      return \"!\" + k;");
-			lines.add("    }");
-			lines.add("  }");
+			for (int i = 0; i < used.size() / readsPerMethod; i++) {
+				lines.add("\tprivate static void generate" + (i + 1) + " (BufferedReader reader){");
+				lines.add("\t\tString line;");
+				lines.add("\t\ttry {");
+				for (int j = 0; j < readsPerMethod; j++) {
+					int readIndex = j + i * readsPerMethod;
+					if (readIndex < used.size()) {
+						String s = used.get(readIndex);
+						lines.add("\t\t\tline = reader.readLine();");
+						lines.add("\t\t\t" + s + " = line.split(\",\", 2).length > 1 ? line.split(\",\", 2)[1].replace(\"\\\"\", \"\") : \"!" + s + "\";");
+						lines.add("\t\t\tmap.put(line.split(\",\")[0], " + s + ");");
+					}
+				}
+				lines.add("\t\t} catch (IOException e) {");
+				lines.add("\t\t\te.printStackTrace();");
+				lines.add("\t\t}");
+				lines.add("\t}\n");
+			}
+
+			lines.add("\tpublic static String get (String k){");
+			lines.add("\t\tif (map.containsKey(k)){");
+			lines.add("\t\t\treturn map.get(k);");
+			lines.add("\t\t} else {");
+			lines.add("\t\t\treturn \"!\" + k;");
+			lines.add("\t\t}");
+			lines.add("\t}");
 
 			lines.add("}");
 			br.close();
