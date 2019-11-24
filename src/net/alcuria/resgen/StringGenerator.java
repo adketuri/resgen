@@ -101,12 +101,12 @@ public class StringGenerator {
 			lines.add("\tpublic static void init() {");
 			lines.add("\t\tBufferedReader reader = LocalizationManager.getReader();");
 			int readsPerMethod = 500;
-			for (int i = 0; i < used.size() / readsPerMethod; i++){
+			for (int i = 0; i <= used.size() / readsPerMethod; i++){
 				lines.add("\t\tgenerate" + (i + 1) + "(reader);");
 			}
 			lines.add("\t}\n");
 
-			for (int i = 0; i < used.size() / readsPerMethod; i++) {
+			for (int i = 0; i <= used.size() / readsPerMethod; i++) {
 				lines.add("\tprivate static void generate" + (i + 1) + " (BufferedReader reader){");
 				lines.add("\t\tString line;");
 				lines.add("\t\ttry {");
